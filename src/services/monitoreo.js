@@ -2,7 +2,7 @@
 
 // Consultas de monitoreo: alertas (RF-14) y eventos de acceso (RF-15).
 
-const { pool, one, all } = require('../db/pool');
+const { pool, one, all, limites } = require('../db/pool');
 const tiempoReal = require('./tiempoReal');
 
 async function listarAlertas({ pendientes = true, pagina = 1, porPagina = 20 } = {}) {
@@ -19,7 +19,7 @@ async function listarAlertas({ pendientes = true, pagina = 1, porPagina = 20 } =
        ${w}
       ORDER BY a.revisada, s.nivel DESC, a.creado_en DESC
       LIMIT ? OFFSET ?`,
-    [porPagina, (p - 1) * porPagina]
+    limites(porPagina, p)
   );
   return { filas, total, pagina: p, paginas };
 }
@@ -80,7 +80,7 @@ async function listarEventos(filtros, pagina = 1, porPagina = 25) {
        ${w}
       ORDER BY ev.id DESC
       LIMIT ? OFFSET ?`,
-    [...params, porPagina, (p - 1) * porPagina]
+    [...params, ...limites(porPagina, p)]
   );
   return { filas, total, pagina: p, paginas };
 }
@@ -105,7 +105,7 @@ async function eventosPorCursor(filtros, antesDe = null, limite = 50) {
        ${w}
       ORDER BY ev.id DESC
       LIMIT ?`,
-    [...params, limite + 1]
+    [...params, String(limite + 1)]
   );
   const hayMas = filas.length > limite;
   if (hayMas) filas.pop();

@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const { body } = require('express-validator');
 
 const config = require('../config');
-const { pool, one, all } = require('../db/pool');
+const { pool, one, all, limites } = require('../db/pool');
 const catalogos = require('../services/catalogos');
 const { requireAdmin } = require('../middleware/auth');
 const { flash } = require('../middleware/locals');
@@ -100,7 +100,7 @@ router.get('/usuarios', async (req, res, next) => {
          ${w}
         ORDER BY r.id, u.nombre, u.apellido
         LIMIT ? OFFSET ?`,
-      [...params, POR, (p - 1) * POR]
+      [...params, ...limites(POR, p)]
     );
     res.render('admin/usuarios', { titulo: 'Usuarios', filas, q, pagina: p, paginas, total, ahora: new Date() });
   } catch (err) {

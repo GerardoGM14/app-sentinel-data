@@ -2,7 +2,7 @@
 
 // Lógica de negocio de incidentes, usada por las vistas web y la API REST.
 
-const { one, all, transaction } = require('../db/pool');
+const { one, all, transaction, limites } = require('../db/pool');
 const catalogos = require('./catalogos');
 const tiempoReal = require('./tiempoReal');
 
@@ -66,7 +66,7 @@ async function listar(user, filtros, pagina = 1, porPagina = 15) {
        ${w}
       ORDER BY i.creado_en DESC
       LIMIT ? OFFSET ?`,
-    [...params, porPagina, (p - 1) * porPagina]
+    [...params, ...limites(porPagina, p)]
   );
   return { filas, total, pagina: p, paginas };
 }
@@ -137,7 +137,7 @@ async function crear(user, datos) {
 
   const res = await transaction(async (conn) => {
     // Bloquea el último código del año para generar el correlativo sin colisiones.
-    const [[ult]] = await conn.query(
+    const [[ult]] = await conn.execute(
       `SELECT MAX(CAST(SUBSTRING(codigo, 10) AS UNSIGNED)) AS n
          FROM incidentes WHERE codigo LIKE ? FOR UPDATE`,
       [`INC-${anio}-%`]

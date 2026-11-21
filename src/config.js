@@ -35,6 +35,10 @@ const config = {
     user: process.env.DB_USER || 'sentinel',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'sentinel',
+    // TLS hacia MySQL administrado (DB_SSL=true). DB_SSL_CA: certificado CA en PEM.
+    ssl: bool(process.env.DB_SSL, false)
+      ? { minVersion: 'TLSv1.2', rejectUnauthorized: true, ...(process.env.DB_SSL_CA ? { ca: process.env.DB_SSL_CA.replace(/\\n/g, '\n') } : {}) }
+      : undefined,
   },
 
   // Tokens de acceso para la API REST (JWT firmado con HMAC-SHA256)
@@ -56,6 +60,8 @@ const config = {
     host: process.env.SMTP_HOST || 'localhost',
     port: int(process.env.SMTP_PORT, 1025),
     secure: bool(process.env.SMTP_SECURE, false),
+    // Exige STARTTLS cuando no se usa TLS directo (por defecto en producción).
+    requireTLS: bool(process.env.SMTP_REQUIRE_TLS, isProd),
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
     from: process.env.MAIL_FROM || 'SentinelData <no-reply@translogix.cl>',

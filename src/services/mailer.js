@@ -7,6 +7,7 @@ const transport = nodemailer.createTransport({
   host: config.mail.host,
   port: config.mail.port,
   secure: config.mail.secure,
+  requireTLS: !config.mail.secure && config.mail.requireTLS,
   auth: config.mail.user ? { user: config.mail.user, pass: config.mail.pass } : undefined,
 });
 

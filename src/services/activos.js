@@ -2,7 +2,7 @@
 
 // Inventario de activos de información (RF-10, RF-11).
 
-const { pool, one, all } = require('../db/pool');
+const { pool, one, all, limites } = require('../db/pool');
 
 const esAdmin = (user) => user && user.rol === 'Administrador';
 
@@ -33,7 +33,7 @@ async function listar(user, q, pagina = 1, porPagina = 15) {
        ${w}
       ORDER BY FIELD(a.criticidad, 'CRITICA', 'ALTA', 'MEDIA', 'BAJA'), a.nombre
       LIMIT ? OFFSET ?`,
-    [...params, porPagina, (p - 1) * porPagina]
+    [...params, ...limites(porPagina, p)]
   );
   return { filas, total, pagina: p, paginas };
 }
