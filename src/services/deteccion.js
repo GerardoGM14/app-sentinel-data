@@ -80,22 +80,22 @@ async function evaluarIpSospechosa(ip, ahora = new Date()) {
 /**
  * Regla 3 - IP_NUEVA: inicio de sesión exitoso desde una IP que el usuario
  * no utilizó en los últimos 90 días. No aplica al primer inicio de sesión.
- * Debe llamarse ANTES de registrar el LOGIN_OK actual.
+ * Debe consultarse ANTES de registrar el LOGIN_OK actual.
  */
-async function evaluarIpNueva(usuario, ip, ahora = new Date()) {
+async function esIpNueva(usuarioId, ip, ahora = new Date(), db = pool) {
   const desde = new Date(ahora.getTime() - config.deteccion.ipNuevaDias * 86400000);
   const tipoOk = catalogos.get().tipoEventoId.LOGIN_OK;
-  const r = await one(
+  const [[r]] = await db.execute(
     `SELECT COUNT(*) AS total, SUM(ip = ?) AS desde_ip
        FROM eventos_acceso
       WHERE usuario_id = ? AND tipo_evento_id = ? AND creado_en >= ?`,
-    [ip, usuario.id, tipoOk, desde]
+    [ip, usuarioId, tipoOk, desde]
   );
-  const total = Number(r.total || 0);
-  const desdeIp = Number(r.desde_ip || 0);
-  if (total === 0 || desdeIp > 0) return false;
+  return Number(r.total || 0) > 0 && Number(r.desde_ip || 0) === 0;
+}
 
-  await crearAlerta({
+function alertaIpNueva(usuario, ip, ahora = new Date()) {
+  return crearAlerta({
     regla: 'IP_NUEVA',
     descripcion: `Inicio de sesión de ${usuario.email} desde una IP no utilizada en ${config.deteccion.ipNuevaDias} días (${ip})`,
     severidad: 'Media',
@@ -103,7 +103,6 @@ async function evaluarIpNueva(usuario, ip, ahora = new Date()) {
     ip,
     fecha: ahora,
   });
-  return true;
 }
 
 /** Regla 4 - FUERA_HORARIO: inicio de sesión exitoso fuera del horario laboral. */
@@ -123,4 +122,4 @@ async function evaluarFueraHorario(usuario, ip, ahora = new Date()) {
   return true;
 }
 
-module.exports = { alertaFuerzaBruta, evaluarIpSospechosa, evaluarIpNueva, evaluarFueraHorario, crearAlerta };
+module.exports = { alertaFuerzaBruta, evaluarIpSospechosa, esIpNueva, alertaIpNueva, evaluarFueraHorario, crearAlerta };
