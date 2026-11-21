@@ -44,4 +44,5 @@ ALTER TABLE eventos_acceso
 -- Verificar el uso de particiones en una consulta:
 --   EXPLAIN SELECT COUNT(*) FROM eventos_acceso
 --    WHERE creado_en >= '2026-11-01' AND creado_en < '2026-12-01';
---   (la columna "partitions" debe mostrar solo p2026_11)
+--   (la columna "partitions" muestra p2026_11; MySQL agrega siempre la primera
+--    partición en TO_DAYS(), porque ahí quedarían las fechas no válidas)

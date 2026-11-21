@@ -22,6 +22,23 @@ async function waitForDb(retries = 30) {
   }
 }
 
+/** Ajustes para bases creadas con una versión anterior del esquema. */
+async function migrar(conn) {
+  const [filas] = await conn.query(
+    `SELECT DISTINCT index_name AS nombre FROM information_schema.statistics
+      WHERE table_schema = DATABASE() AND table_name = 'eventos_acceso'`
+  );
+  const indices = new Set(filas.map((f) => f.nombre));
+  const cambios = [];
+  if (!indices.has('idx_eventos_email_fecha')) cambios.push('ADD INDEX idx_eventos_email_fecha (email_intentado, creado_en)');
+  if (!indices.has('idx_eventos_tipo_fecha_ip')) cambios.push('ADD INDEX idx_eventos_tipo_fecha_ip (tipo_evento_id, creado_en, ip, email_intentado)');
+  if (indices.has('idx_eventos_tipo_fecha')) cambios.push('DROP INDEX idx_eventos_tipo_fecha');
+  if (cambios.length) {
+    await conn.query(`ALTER TABLE eventos_acceso ${cambios.join(', ')}`);
+    console.log('[db] índices de eventos_acceso actualizados');
+  }
+}
+
 /** Crea las tablas y catálogos si no existen. */
 async function ensureSchema() {
   const sql = fs.readFileSync(SCHEMA_FILE, 'utf8');
@@ -32,6 +49,7 @@ async function ensureSchema() {
   });
   try {
     await conn.query(sql);
+    await migrar(conn);
   } finally {
     await conn.end();
   }

@@ -62,6 +62,8 @@ function filtrosEventos(filtros) {
   return { where, params };
 }
 
+// LEFT JOIN con el catálogo (la FK garantiza la coincidencia): obliga a MySQL a
+// recorrer los eventos por su clave primaria y detenerse al completar la página.
 const COLUMNAS_EVENTO = `ev.id, ev.ip, ev.user_agent, ev.email_intentado, ev.creado_en,
             t.codigo, t.descripcion AS evento, CONCAT(u.nombre, ' ', u.apellido) AS usuario`;
 
@@ -75,7 +77,7 @@ async function listarEventos(filtros, pagina = 1, porPagina = 25) {
   const filas = await all(
     `SELECT ${COLUMNAS_EVENTO}
        FROM eventos_acceso ev
-       JOIN tipos_evento t ON t.id = ev.tipo_evento_id
+       LEFT JOIN tipos_evento t ON t.id = ev.tipo_evento_id
        LEFT JOIN usuarios u ON u.id = ev.usuario_id
        ${w}
       ORDER BY ev.id DESC
@@ -100,7 +102,7 @@ async function eventosPorCursor(filtros, antesDe = null, limite = 50) {
   const filas = await all(
     `SELECT ${COLUMNAS_EVENTO}
        FROM eventos_acceso ev
-       JOIN tipos_evento t ON t.id = ev.tipo_evento_id
+       LEFT JOIN tipos_evento t ON t.id = ev.tipo_evento_id
        LEFT JOIN usuarios u ON u.id = ev.usuario_id
        ${w}
       ORDER BY ev.id DESC

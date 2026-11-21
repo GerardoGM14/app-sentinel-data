@@ -1,7 +1,7 @@
 -- =====================================================================
 -- SentinelData - Modelo relacional (MySQL 8.4, tercera forma normal)
--- 13 tablas de dominio + 1 tabla de agregación (resumen_eventos_hora)
--- + tabla técnica `sessions` (creada por la app).
+-- 14 tablas de dominio + 1 tabla de agregación (resumen_eventos_hora)
+-- + tabla técnica `sessions` (creada por la app) = 16 tablas.
 -- Todas las sentencias son idempotentes: se pueden ejecutar varias veces.
 -- =====================================================================
 
@@ -192,9 +192,10 @@ CREATE TABLE IF NOT EXISTS eventos_acceso (
   user_agent      VARCHAR(255) NULL,
   creado_en       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_eventos_tipo_fecha    (tipo_evento_id, creado_en),
+  KEY idx_eventos_tipo_fecha_ip (tipo_evento_id, creado_en, ip, email_intentado), -- cubre el ranking de IP del panel
   KEY idx_eventos_usuario_fecha (usuario_id, creado_en),
   KEY idx_eventos_ip_fecha      (ip, creado_en),
+  KEY idx_eventos_email_fecha   (email_intentado, creado_en),
   KEY idx_eventos_fecha         (creado_en),
   CONSTRAINT fk_eventos_tipo    FOREIGN KEY (tipo_evento_id) REFERENCES tipos_evento (id),
   CONSTRAINT fk_eventos_usuario FOREIGN KEY (usuario_id)     REFERENCES usuarios (id) ON DELETE SET NULL
