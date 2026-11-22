@@ -70,6 +70,13 @@
   // Validación de formularios al salir de cada campo y al enviar
   // -------------------------------------------------------------------
   var POLITICA = 'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo';
+  // La hora la fija el servidor (hora de Chile): se compara con el atributo max más
+  // el tiempo que lleva abierta la página, sin depender de la zona horaria del equipo.
+  var CARGA = Date.now();
+  function esFutura(el, v) {
+    var tope = new Date(el.getAttribute('max') || Date.now()).getTime() + (Date.now() - CARGA) + 5 * 60000;
+    return new Date(v).getTime() > tope;
+  }
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   function mensaje(el) {
@@ -98,7 +105,7 @@
       var otro = document.getElementById(match);
       if (otro && otro.value !== el.value) return 'Las contraseñas no coinciden';
     }
-    if (el.hasAttribute('data-max-now') && new Date(v).getTime() > Date.now() + 5 * 60000) {
+    if (el.hasAttribute('data-max-now') && esFutura(el, v)) {
       return el.getAttribute('data-msg-max') || 'La fecha no puede ser futura';
     }
     return '';
@@ -117,8 +124,13 @@
 
   document.querySelectorAll('form[data-validate]').forEach(function (form) {
     var campos = form.querySelectorAll('input:not([type=hidden]), select, textarea');
+    // Al pulsar un botón no se valida el campo que pierde el foco: el mensaje de error
+    // movería el botón y el clic se perdería. El envío valida todos los campos.
+    var pulsando = false;
+    form.addEventListener('pointerdown', function (e) { pulsando = !!e.target.closest('button, a'); });
+    document.addEventListener('pointerup', function () { pulsando = false; });
     campos.forEach(function (el) {
-      el.addEventListener('blur', function () { mostrar(el, mensaje(el)); });
+      el.addEventListener('blur', function () { if (!pulsando) mostrar(el, mensaje(el)); });
       el.addEventListener('change', function () { if (el.classList.contains('invalid') || el.type === 'checkbox') mostrar(el, mensaje(el)); });
       el.addEventListener('input', function () { if (el.classList.contains('invalid')) mostrar(el, mensaje(el)); });
     });

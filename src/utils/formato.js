@@ -59,4 +59,6 @@ function qs(base, params, cambios = {}) {
   return s ? `${base}?${s}` : base;
 }
 
-module.exports = { fechaHora, fecha, inputDateTime, numero, claseNivel, claseEstado, regla, nombreCompleto, qs };
+const ZONA = process.env.TZ || 'America/Santiago';
+
+module.exports = { ZONA, fechaHora, fecha, inputDateTime, numero, claseNivel, claseEstado, regla, nombreCompleto, qs };

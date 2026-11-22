@@ -211,6 +211,10 @@ a.kpi:hover { text-decoration: none; border-color: var(--border); }
 .kpi-red { border-left-color: var(--danger); }
 .kpi-green { border-left-color: var(--green); }
 .kpi-teal { border-left-color: var(--primary); }
+.gestion { margin-bottom: 1rem; }
+.gestion-datos { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin: 0; }
+.gestion-datos dt { font-size: .8rem; color: var(--muted); }
+.gestion-datos dd { margin: .15rem 0 0; font-size: 1.25rem; font-weight: 600; }
 
 .hero-card {
   display: flex; flex-direction: column; gap: 1rem;
@@ -293,8 +297,14 @@ p.meta { display: block; }
 .table .num { text-align: right; }
 .table-compact td { padding: .55rem .7rem; }
 .truncate { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card:has(> .table), .ep-body:has(> .table) { overflow-x: auto; }
+.table td { overflow-wrap: break-word; }
 .row-actions { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
 
+@media (min-width: 600px) and (max-width: 1099.98px) {
+  .table th, .table td { padding-left: .4rem; padding-right: .4rem; }
+  .table { font-size: .84rem; }
+}
 @media (max-width: 599.98px) {
   .table-cards thead { display: none; }
   .table-cards, .table-cards tbody, .table-cards tr, .table-cards td { display: block; width: 100%; }
@@ -371,6 +381,7 @@ p.meta { display: block; }
   .topbar { padding: 1.1rem 1.75rem; }
   .content { padding: 1.5rem 1.75rem; }
   .kpis { grid-template-columns: repeat(5, 1fr); }
+  .gestion-datos { grid-template-columns: repeat(4, 1fr); }
   .kpis-3 { grid-template-columns: repeat(3, 1fr); }
   .grid-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); }
   .grid-2-panel { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
@@ -443,6 +454,10 @@ p.meta { display: block; }
   .toast, .alert-new, .row-new, .kpi-bump, .live::before { animation: none; }
 }
 
+@media (min-width: 600px) {
+  .table td[data-label="Código"], .table td[data-label="Identificador"] { white-space: nowrap; }
+}
+
 /* =====================================================================
    Documentación de la API (/api/docs)
    ===================================================================== */
@@ -469,7 +484,9 @@ body.docs { background: var(--bg); }
 .endpoint summary::-webkit-details-marker { display: none; }
 .endpoint[open] summary { border-bottom: 1px solid var(--border-soft); background: #f8fafc; }
 .ep-summary { color: var(--muted); font-size: .9rem; }
-.ep-body { padding: .5rem 1rem 1rem; }
+.ep-body { padding: .5rem 1rem 1rem; min-width: 0; }
+.docs-steps pre, .ep-body pre { max-width: 100%; overflow-x: auto; }
+.docs-steps code { overflow-wrap: anywhere; }
 .ep-body h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; color: #475569; margin-top: 1rem; }
 .method { font-family: var(--mono); font-weight: 700; font-size: .75rem; padding: .2rem .5rem; border-radius: 5px; min-width: 4.2rem; text-align: center; color: #fff; }
 .method-get { background: var(--blue); }

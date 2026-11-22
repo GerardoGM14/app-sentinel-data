@@ -7,5 +7,6 @@
   <title><%= typeof titulo !== 'undefined' ? titulo + ' · ' : '' %>SentinelData</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/styles.css">
+  <meta name="zona-horaria" content="<%= f.ZONA %>">
   <% if (locals.csrfToken) { %><meta name="csrf-token" content="<%= csrfToken %>"><% } %>
 </head>

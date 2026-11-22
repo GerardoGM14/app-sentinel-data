@@ -10,6 +10,7 @@
   var socket = io({ transports: ['websocket', 'polling'] });
   var indicador = document.getElementById('live-indicator');
   var toasts = document.getElementById('toasts');
+  var metaZona = document.querySelector('meta[name="zona-horaria"]');
   var metaCsrf = document.querySelector('meta[name="csrf-token"]');
 
   socket.on('connect', function () { if (indicador) indicador.hidden = false; });
@@ -24,13 +25,16 @@
     if (texto !== undefined && texto !== null) n.textContent = texto;
     return n;
   }
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
   function fechaHora(iso) {
-    var d = new Date(iso);
-    var h = d.getHours();
+    // Misma zona horaria que las fechas que arma el servidor.
+    var p = {};
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: metaZona ? metaZona.content : undefined, hourCycle: 'h23',
+      year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    }).formatToParts(new Date(iso)).forEach(function (x) { p[x.type] = x.value; });
+    var h = parseInt(p.hour, 10);
     var suf = h < 12 ? 'a. m.' : 'p. m.';
-    h = h % 12 || 12;
-    return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + String(d.getFullYear()).slice(2) + ', ' + h + ':' + pad(d.getMinutes()) + ' ' + suf;
+    return p.day + '-' + p.month + '-' + p.year + ', ' + (h % 12 || 12) + ':' + p.minute + ' ' + suf;
   }
   function claseNivel(n) {
     n = String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
