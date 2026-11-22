@@ -8,7 +8,20 @@ function flash(req, tipo, texto) {
   req.session.flash.push({ tipo, texto });
 }
 
+/**
+ * Guarda la sesión antes de redirigir. Si no, el navegador puede pedir la página
+ * siguiente antes de que termine la escritura en MySQL y perder el mensaje flash.
+ */
+function redirigirConSesion(req, res, next) {
+  const redirect = res.redirect.bind(res);
+  res.redirect = (...args) => {
+    if (!req.session) return redirect(...args);
+    req.session.save((err) => (err ? next(err) : redirect(...args)));
+  };
+}
+
 function locals(req, res, next) {
+  redirigirConSesion(req, res, next);
   res.locals.user = req.session.user || null;
   res.locals.esAdmin = req.session.user?.rol === 'Administrador';
   res.locals.flash = req.session.flash || [];
