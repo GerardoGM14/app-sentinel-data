@@ -4,7 +4,8 @@
 // Las series por día y por hora se leen de resumen_eventos_hora (agregado
 // precalculado), de modo que el costo del panel no crece con el volumen de
 // eventos. Solo el ranking de IPs y los fallos de las últimas 24 h consultan
-// la tabla de eventos, apoyados en el índice (tipo_evento_id, creado_en).
+// la tabla de eventos, apoyados en el índice cubriente
+// (tipo_evento_id, creado_en, ip, email_intentado): MySQL no lee las filas.
 
 const { one, all } = require('../db/pool');
 const catalogos = require('./catalogos');
@@ -27,7 +28,7 @@ async function admin() {
   const hace24h = new Date(ahora - DIA);
   const hace30d = new Date(ahora - 30 * DIA);
 
-  const [kEventos, kFallos, kAlertas, kAbiertos, kBloqueadas, diarios, porHora, topIps, porCategoria, alertas] =
+  const [kEventos, kFallos, kAlertas, kAbiertos, kBloqueadas, diarios, porHora, topIps, porCategoria, alertas, resp] =
     await Promise.all([
       one('SELECT COALESCE(SUM(total), 0) AS n FROM resumen_eventos_hora WHERE dia >= ?', [desde7]),
       one('SELECT COUNT(*) AS n FROM eventos_acceso WHERE tipo_evento_id = ? AND creado_en >= ?', [fallido, hace24h]),
@@ -65,6 +66,7 @@ async function admin() {
           WHERE a.revisada = 0
           ORDER BY a.creado_en DESC LIMIT 6`
       ),
+      respuesta(new Date(ahora - 90 * DIA), ahora),
     ]);
 
   // Serie de 14 días completa (incluye días sin eventos).
@@ -94,6 +96,39 @@ async function admin() {
     },
     topIps,
     alertas,
+    respuesta: resp,
+  };
+}
+
+/**
+ * Tiempos de gestión de los incidentes reportados desde `desde`. La primera
+ * respuesta es el primer cambio de estado que registra el equipo de seguridad;
+ * el SLA de la severidad es el plazo comprometido para esa primera respuesta.
+ */
+async function respuesta(desde, ahora = new Date()) {
+  const r = await one(
+    `SELECT COUNT(*) AS total,
+            SUM(p.fecha IS NOT NULL) AS respondidos,
+            AVG(TIMESTAMPDIFF(MINUTE, i.creado_en, p.fecha)) AS min_respuesta,
+            AVG(TIMESTAMPDIFF(MINUTE, i.creado_en, i.cerrado_en)) AS min_resolucion,
+            SUM(p.fecha IS NOT NULL AND TIMESTAMPDIFF(MINUTE, i.creado_en, p.fecha) <= s.sla_horas * 60) AS en_plazo,
+            SUM(p.fecha IS NULL AND TIMESTAMPDIFF(MINUTE, i.creado_en, ?) > s.sla_horas * 60) AS vencidos
+       FROM incidentes i
+       JOIN severidades s ON s.id = i.severidad_id
+       LEFT JOIN (SELECT incidente_id, MIN(creado_en) AS fecha
+                    FROM seguimientos_incidente
+                   WHERE estado_anterior_id IS NOT NULL
+                   GROUP BY incidente_id) p ON p.incidente_id = i.id
+      WHERE i.creado_en >= ?`,
+    [ahora, desde]
+  );
+  const horas = (min) => (min === null || min === undefined ? null : Math.round((Number(min) / 60) * 10) / 10);
+  const evaluables = Number(r.respondidos || 0) + Number(r.vencidos || 0);
+  return {
+    incidentes: Number(r.total || 0),
+    primeraRespuestaHoras: horas(r.min_respuesta),
+    resolucionHoras: horas(r.min_resolucion),
+    cumplimientoSla: evaluables ? Math.round((Number(r.en_plazo || 0) / evaluables) * 100) : null,
   };
 }
 
@@ -133,4 +168,4 @@ async function colaborador(userId) {
   };
 }
 
-module.exports = { admin, colaborador };
+module.exports = { admin, colaborador, respuesta };

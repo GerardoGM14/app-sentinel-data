@@ -13,6 +13,7 @@
   var CATEGORIAS = ['#0f766e', '#2563eb', '#f97316', '#dc2626', '#7c3aed', '#64748b', '#0891b2'];
 
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.locale = 'es-CL';
   Chart.defaults.color = '#475569';
   Chart.defaults.maintainAspectRatio = false;
 

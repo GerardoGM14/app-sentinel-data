@@ -8,6 +8,16 @@
   <a class="kpi kpi-teal" href="/admin/usuarios"><span>Cuentas bloqueadas</span><strong data-kpi="bloqueadas"><%= f.numero(kpi.cuentasBloqueadas) %></strong></a>
 </section>
 
+<section class="card gestion" aria-labelledby="gestion-titulo">
+  <h2 id="gestion-titulo">Gestión de incidentes (90 días)</h2>
+  <dl class="gestion-datos">
+    <div><dt>Primera respuesta (media)</dt><dd><%= respuesta.primeraRespuestaHoras === null ? '—' : f.numero(respuesta.primeraRespuestaHoras) + ' h' %></dd></div>
+    <div><dt>Resolución (media)</dt><dd><%= respuesta.resolucionHoras === null ? '—' : f.numero(respuesta.resolucionHoras) + ' h' %></dd></div>
+    <div><dt>Respuestas dentro del SLA</dt><dd><%= respuesta.cumplimientoSla === null ? '—' : respuesta.cumplimientoSla + ' %' %></dd></div>
+    <div><dt>Incidentes reportados</dt><dd><%= f.numero(respuesta.incidentes) %></dd></div>
+  </dl>
+</section>
+
 <section class="grid-panel">
   <article class="card">
     <h2>Inicios de sesión últimos 14 días</h2>

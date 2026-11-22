@@ -184,6 +184,6 @@ module.exports = {
         responses: { 200: { description: 'Eventos', content: json({ type: 'object', properties: { datos: { type: 'array', items: ref('Evento') }, siguiente: { type: 'integer', nullable: true }, limite: { type: 'integer' } } }) }, 403: comunes[403] },
       },
     },
-    '/metricas/panel': { get: { tags: ['Monitoreo'], summary: 'Indicadores y series del panel analítico', responses: { 200: { description: 'KPI, series diarias y por hora, top IPs, incidentes por categoría' }, 403: comunes[403] } } },
+    '/metricas/panel': { get: { tags: ['Monitoreo'], summary: 'Indicadores y series del panel analítico', responses: { 200: { description: 'KPI, series diarias y por hora, top IPs, incidentes por categoría y tiempos de respuesta (90 días)' }, 403: comunes[403] } } },
   },
 };
