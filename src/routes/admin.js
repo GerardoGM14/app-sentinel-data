@@ -11,6 +11,7 @@ const { requireAdmin } = require('../middleware/auth');
 const { flash } = require('../middleware/locals');
 const v = require('../utils/validacion');
 const monitoreo = require('../services/monitoreo');
+const sesiones = require('../services/sesiones');
 
 const router = express.Router();
 
@@ -206,12 +207,10 @@ router.post('/usuarios/:id', reglasUsuario(false), async (req, res, next) => {
     }
     await pool.execute(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = ?`, [...params, u.id]);
 
-    // Al desactivar una cuenta se cierran sus sesiones abiertas.
-    if (!activo && u.activo) {
-      await pool.execute(
-        "DELETE FROM sessions WHERE JSON_EXTRACT(data, '$.user.id') = ?",
-        [u.id]
-      ).catch(() => {});
+    // Al desactivar la cuenta, cambiar su perfil o su contraseña se cierran sus
+    // sesiones y conexiones en vivo (salvo la del propio administrador).
+    if ((!activo && u.activo) || Number(req.body.rol_id) !== u.rol_id || req.body.password) {
+      await sesiones.cerrarDe(u.id, u.id === req.session.user.id ? req.sessionID : null);
     }
     flash(req, 'ok', `Usuario ${req.body.email} actualizado.`);
     res.redirect('/admin/usuarios');

@@ -8,6 +8,7 @@ const config = require('../config');
 const { pool, one } = require('../db/pool');
 const catalogos = require('../services/catalogos');
 const eventos = require('../services/eventos');
+const sesiones = require('../services/sesiones');
 const { requireAuth } = require('../middleware/auth');
 const { flash } = require('../middleware/locals');
 const v = require('../utils/validacion');
@@ -95,7 +96,8 @@ router.post(
       const hash = await bcrypt.hash(req.body.nueva, config.security.bcryptCost);
       await pool.execute('UPDATE usuarios SET password_hash = ? WHERE id = ?', [hash, req.session.user.id]);
       await eventos.registrar('PASSWORD_CAMBIADA', { req, usuarioId: req.session.user.id, email: req.session.user.email });
-      flash(req, 'ok', 'Contraseña actualizada.');
+      await sesiones.cerrarDe(req.session.user.id, req.sessionID);
+      flash(req, 'ok', 'Contraseña actualizada. Se cerraron tus otras sesiones.');
       res.redirect('/perfil');
     } catch (err) {
       next(err);

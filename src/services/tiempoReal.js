@@ -50,6 +50,7 @@ function iniciar(httpServer, sessionMiddleware) {
   io.on('connection', (socket) => {
     const u = socket.data.user;
     socket.join(`usuario:${u.id}`);
+    if (socket.request.sessionID) socket.data.sid = socket.request.sessionID;
     if (u.rol === 'Administrador') socket.join(SALA_ADMIN);
     socket.emit('conectado', { rol: u.rol });
   });
@@ -67,8 +68,25 @@ function aUsuario(usuarioId, evento, datos) {
   if (io && usuarioId) io.to(`usuario:${usuarioId}`).emit(evento, datos);
 }
 
+/**
+ * Corta las conexiones en vivo de un usuario (cuenta desactivada, cambio de
+ * perfil o de contraseña), salvo las de la sesión indicada.
+ */
+function desconectarUsuario(usuarioId, exceptoSid = null) {
+  if (!io) return;
+  for (const s of io.sockets.sockets.values()) {
+    if (s.data.user.id === usuarioId && (!exceptoSid || s.data.sid !== exceptoSid)) s.disconnect(true);
+  }
+}
+
+/** Corta las conexiones en vivo de una sesión que se cerró. */
+function desconectarSesion(sid) {
+  if (!io || !sid) return;
+  for (const s of io.sockets.sockets.values()) if (s.data.sid === sid) s.disconnect(true);
+}
+
 function cerrar() {
   if (io) io.close();
 }
 
-module.exports = { iniciar, aAdmins, aUsuario, cerrar };
+module.exports = { iniciar, aAdmins, aUsuario, desconectarUsuario, desconectarSesion, cerrar };

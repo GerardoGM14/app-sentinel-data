@@ -11,6 +11,7 @@ const config = require('./config');
 const { pool } = require('./db/pool');
 const { csrf } = require('./middleware/csrf');
 const { locals } = require('./middleware/locals');
+const sesiones = require('./services/sesiones');
 
 const app = express();
 
@@ -54,6 +55,9 @@ app.get('/vendor/chart.umd.js', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'node_modules', 'chart.js', 'dist', 'chart.umd.js'));
 });
 
+// Chequeo de salud: va antes de las sesiones para no crear una en cada consulta.
+app.get('/health', (req, res) => res.json({ ok: true }));
+
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 
 // ---------------------------------------------------------------------
@@ -88,6 +92,9 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 // Socket.IO reutiliza la misma sesión para autenticar las conexiones en vivo.
 app.locals.sessionMiddleware = sessionMiddleware;
+
+// La cuenta se relee en cada solicitud: desactivarla o cambiar su perfil es inmediato.
+app.use(sesiones.vigente);
 
 app.use(locals);
 
@@ -125,7 +132,6 @@ app.use(['/login', '/registro', '/recuperar'], limiteAuth);
 // Rutas
 // ---------------------------------------------------------------------
 app.get('/', (req, res) => res.redirect(req.session.user ? '/panel' : '/login'));
-app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.use(require('./routes/auth'));
 app.use(require('./routes/panel'));

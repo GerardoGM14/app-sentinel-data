@@ -11,6 +11,8 @@ const catalogos = require('../services/catalogos');
 const eventos = require('../services/eventos');
 const autenticacion = require('../services/autenticacion');
 const mailer = require('../services/mailer');
+const sesiones = require('../services/sesiones');
+const tiempoReal = require('../services/tiempoReal');
 const { soloInvitados } = require('../middleware/auth');
 const { renovar } = require('../middleware/csrf');
 const { flash } = require('../middleware/locals');
@@ -65,7 +67,9 @@ router.post('/logout', async (req, res, next) => {
   try {
     const u = req.session.user;
     if (u) await eventos.registrar('LOGOUT', { req, usuarioId: u.id, email: u.email });
+    const sid = req.sessionID;
     req.session.destroy(() => {
+      tiempoReal.desconectarSesion(sid);
       res.clearCookie('sid');
       res.redirect('/login');
     });
@@ -167,17 +171,16 @@ router.post('/recuperar', soloInvitados, [v.reglaEmail('email')], async (req, re
           [u.id, sha256(token), expira, ahora]
         );
       });
-      try {
-        await mailer.enviarRecuperacion({
+      // Se envía en segundo plano: ni el tiempo de respuesta ni un error de SMTP
+      // deben revelar si la cuenta existe.
+      mailer
+        .enviarRecuperacion({
           para: u.email,
           nombre: u.nombre,
           enlace: `${config.appUrl}/restablecer/${token}`,
           minutos: config.security.tokenMinutos,
-        });
-      } catch (err) {
-        // No se revela el error al usuario para no confirmar que la cuenta existe.
-        console.error('[mail] no se pudo enviar el correo de recuperación:', err.message);
-      }
+        })
+        .catch((err) => console.error('[mail] no se pudo enviar el correo de recuperación:', err.message));
     }
     flash(req, 'ok', MSG_RECUPERAR);
     res.redirect('/recuperar');
@@ -236,6 +239,7 @@ router.post(
         return true;
       });
       if (!usado) return enlaceInvalido(res);
+      await sesiones.cerrarDe(t.usuario_id);
       await eventos.registrar('PASSWORD_CAMBIADA', { req, usuarioId: t.usuario_id, email: t.email });
       flash(req, 'ok', 'Tu contraseña fue actualizada. Ya puedes iniciar sesión.');
       res.redirect('/login');
