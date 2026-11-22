@@ -9,7 +9,7 @@ const { ensureSchema, waitForDb } = require('./init');
 const { seed } = require('./seed');
 
 const TABLAS = [
-  'sessions', 'resumen_eventos_hora', 'alertas', 'eventos_acceso', 'tipos_evento', 'seguimientos_incidente',
+  'resumen_eventos_hora', 'alertas', 'eventos_acceso', 'tipos_evento', 'seguimientos_incidente',
   'incidentes', 'estados_incidente', 'severidades', 'categorias_incidente',
   'activos', 'tipos_activo', 'tokens_recuperacion', 'usuarios', 'areas', 'roles',
 ];
@@ -25,6 +25,10 @@ const TABLAS = [
     await pool.query(`DROP TABLE IF EXISTS \`${t}\``);
   }
   await pool.query('SET FOREIGN_KEY_CHECKS = 1');
+  // La tabla de sesiones la crea la aplicación: se vacía (no se borra) para no romper una instancia en marcha.
+  await pool.query('DELETE FROM sessions').catch((err) => {
+    if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+  });
   console.log('[db] tablas eliminadas');
   await ensureSchema();
   await seed();
