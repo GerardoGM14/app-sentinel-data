@@ -1,6 +1,7 @@
 node_modules/
 archivo/
 .env
+.env.prod
 npm-debug.log*
 .DS_Store
 Thumbs.db

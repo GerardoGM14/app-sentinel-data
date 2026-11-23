@@ -12,9 +12,9 @@ services:
       MYSQL_USER: sentinel
       MYSQL_PASSWORD: sentinel_dev
       TZ: America/Santiago
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--innodb-buffer-pool-size=512M"]
     ports:
-      - "3306:3306"
+      - "${DB_PUERTO:-3306}:3306"   # DB_PUERTO=3307 si el 3306 está ocupado
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -27,8 +27,8 @@ services:
     image: axllent/mailpit:v1.20
     restart: unless-stopped
     ports:
-      - "8025:8025"   # interfaz web
-      - "1025:1025"   # SMTP
+      - "${MAILPIT_PUERTO:-8025}:8025"   # interfaz web
+      - "${SMTP_PUERTO:-1025}:1025"   # SMTP
 
   app:
     build: .
@@ -59,7 +59,7 @@ services:
       # Más holgado en desarrollo para poder repetir las pruebas e2e
       AUTH_RATE_LIMIT: 200
     ports:
-      - "3000:3000"
+      - "${APP_PUERTO:-3000}:3000"
 
 volumes:
   db_data:
