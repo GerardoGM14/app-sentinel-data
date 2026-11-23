@@ -24,7 +24,7 @@ function check(cond, desc) {
 async function api(metodo, ruta, { token, body, crudo } = {}) {
   const headers = {};
   if (token) headers.authorization = `Bearer ${token}`;
-  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (body !== undefined || crudo !== undefined) headers['content-type'] = 'application/json';
   const res = await fetch(API + ruta, { method: metodo, headers, body: crudo !== undefined ? crudo : body !== undefined ? JSON.stringify(body) : undefined });
   let json = null;
   try {
